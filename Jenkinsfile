@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        SNYK_TOKEN = credentials('SNYK_TOKEN') // Snyk API token
+        SNYK_TOKEN = credentials('SNYK_TOKEN')
     }
 
     stages {
@@ -29,7 +29,6 @@ pipeline {
         stage('SonarQube Analysis') {
             steps {
                 withSonarQubeEnv('sonar') {
-                    echo "Running SonarQube analysis..."
                     sh '''
                         mvn sonar:sonar \
                         -Dsonar.projectKey=spring-boot-mongo \
@@ -41,7 +40,6 @@ pipeline {
 
         stage('Snyk Repo Scan') {
             steps {
-                echo "Running Snyk scan for dependency vulnerabilities..."
                 sh '''
                     echo "Authenticating with Snyk..."
                     snyk auth $SNYK_TOKEN
@@ -55,5 +53,36 @@ pipeline {
             }
         }
 
+        stage('Build & Tag Docker Image') {
+            steps {
+                script {
+                    echo "Building Docker image..."
+                    withDockerRegistry(credentialsId: 'docker') {
+                        sh 'docker build -t pvreddy1/mongospring:latest .'
+                    }
+                }
+            }
+        }
+
+        stage('Trivy Image Scan') {
+            steps {
+                sh '''
+                    echo "Scanning Docker image using Trivy..."
+                    trivy image --exit-code 0 --severity HIGH,CRITICAL pvreddy1/mongospring:latest
+                    trivy image --exit-code 1 --severity CRITICAL pvreddy1/mongospring:latest || true
+                '''
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    echo "Pushing Docker image to DockerHub..."
+                    withDockerRegistry(credentialsId: 'docker') {
+                        sh 'docker push pvreddy1/mongospring:latest'
+                    }
+                }
+            }
+        }
     }
 }
