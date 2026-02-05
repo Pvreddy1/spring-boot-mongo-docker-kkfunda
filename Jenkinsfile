@@ -26,14 +26,30 @@ pipeline {
             }
         }
 
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonar') {
+                    echo "Running SonarQube analysis..."
+                    sh '''
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=spring-boot-mongo \
+                        -Dsonar.projectName="Spring Boot Mongo Project"
+                    '''
+                }
+            }
+        }
+
         stage('Snyk Repo Scan') {
             steps {
                 echo "Running Snyk scan for dependency vulnerabilities..."
                 sh '''
                     echo "Authenticating with Snyk..."
                     snyk auth $SNYK_TOKEN
+
                     echo "Running Snyk Test..."
                     snyk test --all-projects || true
+
+                    echo "Sending results to Snyk dashboard..."
                     snyk monitor --all-projects || true
                 '''
             }
