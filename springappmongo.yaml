@@ -105,7 +105,7 @@ kind: Service
 metadata:
   name: springapp
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: springapp
   ports:
@@ -114,6 +114,11 @@ spec:
 
 ---
 # =========================
+
+# image: mongo:8.0.9-noble
+
+# image: mongo:6.0
+
 # MongoDB ReplicaSet
 # =========================
 apiVersion: apps/v1
