@@ -137,7 +137,7 @@ spec:
     spec:
       containers:
       - name: mongodbcontainer
-        image: mongo:8.0.9-noble
+        image: mongo:6.0
         ports:
         - containerPort: 27017
         env:
