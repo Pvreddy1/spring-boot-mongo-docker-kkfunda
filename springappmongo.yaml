@@ -87,7 +87,7 @@ kind: Service
 metadata:
   name: springapp
 spec:
-  type: NodePort
+  type: LoadBalancer
   selector:
     app: springapp
   ports:
