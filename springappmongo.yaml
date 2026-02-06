@@ -23,7 +23,7 @@ stringData:
 
 ---
 # =========================
-# PersistentVolumeClaim (EKS SAFE)
+# PersistentVolumeClaim (Dynamic EBS)
 # =========================
 apiVersion: v1
 kind: PersistentVolumeClaim
@@ -37,73 +37,14 @@ spec:
     requests:
       storage: 5Gi
 
-
 ---
 # =========================
-# Spring Boot Deployment
+# MongoDB Deployment
 # =========================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: springappdeployment
-spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app: springapp
-  template:
-    metadata:
-      labels:
-        app: springapp
-    spec:
-      containers:
-      - name: springappcontainer
-        image: pvreddy1/mongospring:latest
-        ports:
-        - containerPort: 8080
-        env:
-        - name: MONGO_DB_USERNAME
-          valueFrom:
-            configMapKeyRef:
-              name: springappconfigmap
-              key: username
-        - name: MONGO_DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: springappsecrets
-              key: password
-        - name: MONGO_DB_DATABASE
-          valueFrom:
-            configMapKeyRef:
-              name: springappconfigmap
-              key: database
-        - name: MONGO_DB_HOSTNAME
-          value: mongo
-
----
-# =========================
-# Spring Boot Service
-# =========================
-apiVersion: v1
-kind: Service
-metadata:
-  name: springapp
-spec:
-  type: LoadBalancer
-  selector:
-    app: springapp
-  ports:
-  - port: 80
-    targetPort: 8080
-
----
-# =========================
-# MongoDB ReplicaSet
-# =========================
-apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: mongodbrs
+  name: mongodb
 spec:
   replicas: 1
   selector:
@@ -115,7 +56,7 @@ spec:
         app: mongodb
     spec:
       containers:
-      - name: mongodbcontainer
+      - name: mongodb
         image: mongo:6.0
         ports:
         - containerPort: 27017
@@ -158,3 +99,61 @@ spec:
   ports:
   - port: 27017
     targetPort: 27017
+
+---
+# =========================
+# Spring Boot Deployment
+# =========================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: springappdeployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: springapp
+  template:
+    metadata:
+      labels:
+        app: springapp
+    spec:
+      containers:
+      - name: springapp
+        image: pvreddy1/mongospring:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: MONGO_DB_USERNAME
+          valueFrom:
+            configMapKeyRef:
+              name: springappconfigmap
+              key: username
+        - name: MONGO_DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: springappsecrets
+              key: password
+        - name: MONGO_DB_DATABASE
+          valueFrom:
+            configMapKeyRef:
+              name: springappconfigmap
+              key: database
+        - name: MONGO_DB_HOSTNAME
+          value: mongo
+
+---
+# =========================
+# Spring Boot Service (LoadBalancer)
+# =========================
+apiVersion: v1
+kind: Service
+metadata:
+  name: springapp
+spec:
+  type: LoadBalancer
+  selector:
+    app: springapp
+  ports:
+  - port: 80
+    targetPort: 8080
